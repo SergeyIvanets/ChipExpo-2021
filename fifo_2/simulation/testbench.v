@@ -1,29 +1,12 @@
-// Write to FIFO
-//{signal: [
-//  {name: "clk", wave: "n.........."},
-//  ['in',
-//    {name: "rst",        wave: "01........."},
-//    {name: "write",      wave: "0.101010101"},
-//    {name: "read",       wave: "0.........."},
-//    {name: "write_data", wave: "3.4.5.6.7.", data: ["00", "11", "22", "33", "44"]},
-//    {name: "read_data",  wave: "3.........", data: ["00"]}
-//  ],
-//    {},
-//  ['out',
-//   {name: "empty",      wave: '1..0.......', phase: 0.5},
-//   {name: "full",       wave: '0.........'}
-//  ]
-//],
-// config: {hscale: 1}
-//}
-
-
 `timescale 1ns/1ps
 
 module testbench;
 
-  parameter FIFO_PTR_WIDTH   = 3;
-  parameter FIFO_DATA_WIDTH  = 8;
+  parameter FIFO_DEPTH        = 8;
+  parameter FIFO_DATA_WIDTH   = 8;
+  parameter ALMOSTFULL_DEPTH  = 3;
+  parameter ALMOSTEMPTY_DEPTH = 3;
+
 
   reg                        clk;
   wire                       clk_enable;
@@ -37,24 +20,29 @@ module testbench;
 
   wire                       empty;
   wire                       full;
-  
+  wire                       almost_empty;
+  wire                       almost_full;
+
   integer i;
 
-fifo_simple DUT (
+fifo_generic DUT (
     clk, clk_enable, reset, 
     write, read, 
     write_data, read_data, 
-    empty, full
+    empty, full,
+    almost_empty, almost_full
 );
 
-
-always #10 clk = ~clk;
+initial
+  begin
+    clk = 1'b0;
+    forever #10 clk = ~clk;
+  end 
 
 assign clk_enable = 1'b1;
 
 task reset_task();
   begin
-    clk        = 1'b0;
     reset      = 1'b1;
     write      = 1'b0;
     read       = 1'b0;
@@ -84,13 +72,13 @@ initial
   begin
     reset_task();
     #30;
-    for (i = 0; i <8; i = i + 1)
+    for (i = 0; i <10; i = i + 1)
     begin
       write_fifo(i);
       #20;
     end 
 
-    repeat(6)
+    repeat(10)
       begin
         read_fifo();
         #20;
