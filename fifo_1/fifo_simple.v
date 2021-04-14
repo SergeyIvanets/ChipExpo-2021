@@ -52,8 +52,9 @@ module fifo_simple
   //------------------------------------------------
   // Full and Empty flags
   //------------------------------------------------
-  assign full = (wr_ptr[FIFO_PTR_WIDTH-1] ^ rd_ptr[FIFO_PTR_WIDTH-1]) & 
-                (wr_ptr[FIFO_PTR_WIDTH-2:0] == rd_ptr[FIFO_PTR_WIDTH-2:0]);
+  assign full = 
+         (wr_ptr[FIFO_PTR_WIDTH-1] ^ rd_ptr[FIFO_PTR_WIDTH-1]) 
+       & (wr_ptr[FIFO_PTR_WIDTH-2:0] == rd_ptr[FIFO_PTR_WIDTH-2:0]);
   assign empty = (wr_ptr == rd_ptr);
 
   //-----------------------------------------------
@@ -71,8 +72,7 @@ module fifo_simple
   //-----------------------------------------------
   // FIFO Read
   //-----------------------------------------------
-  always @ (posedge clk)
-  begin
+  always @ (posedge clk)  begin
     if (reset)
       read_data <= {FIFO_DATA_WIDTH{1'b0}};
     else if (clk_enable)

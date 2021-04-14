@@ -1,4 +1,4 @@
-`timescale 1ns/1ps
+`timescale 1ns/100ps
 
 module testbench;
 
@@ -7,6 +7,8 @@ module testbench;
   parameter ALMOSTFULL_DEPTH  = 3;
   parameter ALMOSTEMPTY_DEPTH = 3;
 
+  // simulation options
+  parameter clock_period      = 20;
 
   reg                        clk;
   wire                       clk_enable;
@@ -25,65 +27,78 @@ module testbench;
 
   integer i;
 
-fifo_generic DUT (
-    clk, clk_enable, reset, 
-    write, read, 
-    write_data, read_data, 
-    empty, full,
-    almost_empty, almost_full
+fifo_generic i_fifo_generic 
+(
+  .clk          ( clk          ), 
+  .clk_enable   ( clk_enable   ), 
+  .reset        ( reset        ), 
+  .write        ( write        ), 
+  .read         ( read         ), 
+  .write_data   ( write_data   ), 
+  .read_data    ( read_data    ), 
+  .empty        ( empty        ), 
+  .full         ( full         ),
+  .almost_empty ( almost_empty ), 
+  .almost_full  ( almost_full  )
 );
 
 initial
   begin
     clk = 1'b0;
-    forever #10 clk = ~clk;
+    forever # (clock_period / 2) clk = ~ clk;
   end 
 
 assign clk_enable = 1'b1;
 
-task reset_task();
+task reset_task ();
   begin
     reset      = 1'b1;
     write      = 1'b0;
     read       = 1'b0;
     write_data = 0;
-    #40; reset = 1'b0;
+    repeat (2)  @ (posedge clk);    
+    reset = 1'b0;
   end
 endtask
 
-task read_fifo();
+task read_fifo ();
   begin
     read = 1'b1;
-    #20;
+    # clock_period;
     read = 1'b0;
   end
 endtask
    
-task write_fifo([7:0]data);
+task write_fifo ([7:0] data);
   begin
     write = 1'b1;
     write_data = data;
-    #20 write = 1'b0;
+    # clock_period write = 1'b0;
   end
 endtask
 
 
 initial
   begin
-    reset_task();
-    #30;
+    reset_task ();
+    # (clock_period * 1.5);
+    
+    // Write to FIFO
+
     for (i = 0; i <10; i = i + 1)
     begin
-      write_fifo(i);
-      #20;
+      write_fifo (i);
+      # clock_period;
     end 
 
-    repeat(10)
+    // Read from FIFO
+    
+    repeat (10)
       begin
-        read_fifo();
-        #20;
+        read_fifo ();
+        # clock_period;
       end
-    #10;
+    # clock_period;
     $finish;
  end
 

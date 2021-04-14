@@ -60,8 +60,9 @@ module fifo_generic
   //------------------------------------------------
   // Full and Empty flags
   //------------------------------------------------
-  assign full  = (wr_ptr[FIFO_PTR_WIDTH-1] ^ rd_ptr[FIFO_PTR_WIDTH-1]) & 
-                  (wr_ptr[FIFO_PTR_WIDTH-2:0] == rd_ptr[FIFO_PTR_WIDTH-2:0]);
+  assign full  = 
+         (wr_ptr[FIFO_PTR_WIDTH-1] ^ rd_ptr[FIFO_PTR_WIDTH-1]) 
+       & (wr_ptr[FIFO_PTR_WIDTH-2:0] == rd_ptr[FIFO_PTR_WIDTH-2:0]);
   assign empty = (wr_ptr == rd_ptr);
 
   //------------------------------------------------
@@ -81,9 +82,11 @@ module fifo_generic
   //------------------------------------------------
   // Almost Full and Almost Empty flags
   //------------------------------------------------
-  assign almost_full  = (operation_count < (FIFO_DEPTH - ALMOSTFULL_DEPTH)) 
-                          ? 1'b0 : 1'b1;
-  assign almost_empty = (operation_count < ALMOSTEMPTY_DEPTH) ? 1'b1 : 1'b0;
+  assign almost_full  = 
+         (operation_count < (FIFO_DEPTH - ALMOSTFULL_DEPTH)) 
+       ? 1'b0 : 1'b1;
+  assign almost_empty = 
+         (operation_count < ALMOSTEMPTY_DEPTH) ? 1'b1 : 1'b0;
 
   //-----------------------------------------------
   // FIFO Write
