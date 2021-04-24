@@ -5,7 +5,6 @@ module fifo_simple
 )
 (
   input                            clk,
-  input                            clk_enable,
   input                            reset,
 
   input                            write,
@@ -32,8 +31,7 @@ module fifo_simple
   begin
     if (reset)
       wr_ptr <= {FIFO_PTR_WIDTH{1'b0}};
-    else if (clk_enable)
-      if (write & !full)
+    else if (write & !full)
         wr_ptr <= wr_ptr + 1'b1;
   end
 
@@ -44,8 +42,7 @@ module fifo_simple
   begin
     if (reset)
       rd_ptr <= {FIFO_PTR_WIDTH{1'b0}};
-    else if (clk_enable)
-      if (read & !empty)
+    else if (read & !empty)
         rd_ptr <= rd_ptr + 1'b1;
   end
 
@@ -64,9 +61,8 @@ module fifo_simple
   begin
     if (reset)
       fifo_array[wr_ptr] <= {FIFO_DATA_WIDTH{1'b0}};
-    else if (clk_enable)
-      if (write & !full)
-        fifo_array[wr_ptr] <= write_data;
+    else if (write & !full)
+        fifo_array[wr_ptr[FIFO_PTR_WIDTH-2:0]] <= write_data;
   end
 
   //-----------------------------------------------
@@ -75,9 +71,8 @@ module fifo_simple
   always @ (posedge clk)  begin
     if (reset)
       read_data <= {FIFO_DATA_WIDTH{1'b0}};
-    else if (clk_enable)
-      if (read & !empty)
-        read_data <= fifo_array[rd_ptr];
+    else if (read & !empty)
+        read_data <= fifo_array[rd_ptr[FIFO_PTR_WIDTH-2:0]];
   end
 
 endmodule

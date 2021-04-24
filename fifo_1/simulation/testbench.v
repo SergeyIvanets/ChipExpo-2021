@@ -1,28 +1,8 @@
-// Write to FIFO
-//{signal: [
-//  {name: "clk", wave: "n.........."},
-//  ['in',
-//    {name: "rst",        wave: "01........."},
-//    {name: "write",      wave: "0.101010101"},
-//    {name: "read",       wave: "0.........."},
-//    {name: "write_data", wave: "3.4.5.6.7.", data: ["00", "11", "22", "33", "44"]},
-//    {name: "read_data",  wave: "3.........", data: ["00"]}
-//  ],
-//    {},
-//  ['out',
-//   {name: "empty",      wave: '1..0.......', phase: 0.5},
-//   {name: "full",       wave: '0.........'}
-//  ]
-//],
-// config: {hscale: 1}
-//}
-
-
 `timescale 1ns/1ps
 
 module testbench;
 
-  parameter FIFO_PTR_WIDTH   = 3;
+  parameter FIFO_DEPTH       = 4;
   parameter FIFO_DATA_WIDTH  = 8;
 
   // simulation options
@@ -46,7 +26,6 @@ module testbench;
 fifo_simple i_fifo_simple 
 (
   .clk          ( clk          ), 
-  .clk_enable   ( clk_enable   ), 
   .reset        ( reset        ), 
   .write        ( write        ), 
   .read         ( read         ), 
@@ -61,8 +40,6 @@ initial
     clk = 1'b0;
     forever # (clock_period / 2) clk = ~ clk;
   end 
-
-assign clk_enable = 1'b1;
 
 task reset_task ();
   begin
@@ -113,6 +90,23 @@ initial
         read_fifo ();
         # clock_period;
       end
+    
+    // Write to FIFO
+    
+    for (i = 0; i <8; i = i + 1)
+    begin
+      write_fifo (i+16);
+      # clock_period;
+    end 
+
+    // Read from FIFO
+    
+    repeat (6)
+      begin
+        read_fifo ();
+        # clock_period;
+      end
+    
     # clock_period;
     $finish;
  end
