@@ -11,7 +11,6 @@ module testbench;
   parameter clock_period      = 20;
 
   reg                        clk;
-  wire                       clk_enable;
   reg                        reset;
 
   reg                        write;
@@ -30,7 +29,6 @@ module testbench;
 fifo_generic i_fifo_generic 
 (
   .clk          ( clk          ), 
-  .clk_enable   ( clk_enable   ), 
   .reset        ( reset        ), 
   .write        ( write        ), 
   .read         ( read         ), 
@@ -47,8 +45,6 @@ initial
     clk = 1'b0;
     forever # (clock_period / 2) clk = ~ clk;
   end 
-
-assign clk_enable = 1'b1;
 
 task reset_task ();
   begin
@@ -88,6 +84,22 @@ initial
     for (i = 0; i <10; i = i + 1)
     begin
       write_fifo (i);
+      # clock_period;
+    end 
+
+    // Read from FIFO
+    
+    repeat (10)
+      begin
+        read_fifo ();
+        # clock_period;
+      end
+    
+    // Write to FIFO
+
+    for (i = 0; i <10; i = i + 1)
+    begin
+      write_fifo (i+16);
       # clock_period;
     end 
 

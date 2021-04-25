@@ -12,7 +12,6 @@ vsim -novopt work.testbench
 #add wave sim:/testbench/*
 
 add wave -radix bin sim:/testbench/clk
-add wave -radix bin sim:/testbench/clk_enable
 add wave -radix bin sim:/testbench/reset
 add wave -radix bin sim:/testbench/write
 add wave -radix bin sim:/testbench/read
@@ -22,6 +21,8 @@ add wave -radix bin sim:/testbench/empty
 add wave -radix bin sim:/testbench/full
 add wave -radix bin sim:/testbench/almost_empty
 add wave -radix bin sim:/testbench/almost_full
+add wave -radix hex sim:/testbench/i_fifo_generic/rd_ptr
+add wave -radix hex sim:/testbench/i_fifo_generic/wr_ptr
 
 # run the simulation
 run -all
