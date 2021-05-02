@@ -70,7 +70,7 @@ module FIFO_simple_DP_RAM
   begin
     if (reset)
       rd_ptr   <= {FIFO_PTR_WIDTH{1'b0}};
-    else if (read & !empty)
+    else if ((write & read & empty) | (read & !empty))
         rd_ptr <= rd_ptr + 1'b1;
   end
 
@@ -89,10 +89,12 @@ module FIFO_simple_DP_RAM
   begin
     if (reset)
       operation_count <= {FIFO_PTR_WIDTH{1'b0}};
-    else if (write & !full)
+    else if (write & read & empty)
+      operation_count <= operation_count;
+      else if (write & !full)
         operation_count <= operation_count + 1'b1;
-      else if (read & !empty) 
-        operation_count <= operation_count - 1'b1;
+        else if (read & !empty) 
+          operation_count <= operation_count - 1'b1;
   end
 
   //------------------------------------------------

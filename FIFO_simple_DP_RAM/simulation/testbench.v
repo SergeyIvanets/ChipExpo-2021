@@ -68,7 +68,7 @@ task read_fifo();
   end
 endtask
    
-task write_fifo([7:0]data);
+task write_fifo ([7:0]data);
   begin
     write = 1'b1;
     write_data = data;
@@ -76,10 +76,33 @@ task write_fifo([7:0]data);
   end
 endtask
 
+task read_during_write ([7:0]data, delay_L, delay_H);
+  begin
+    write = 1'b1;
+    write_data = data;
+    read = 1'b1;
+    # delay_H;
+    read = 1'b0;
+    write = 1'b0;
+    # delay_L;
+  end
+endtask
+
+
 initial
   begin
+  //------------------------------------------------
+  // reset FIFO conter and pointers
+  //------------------------------------------------
+
     reset_task ();
     #30;
+
+  //------------------------------------------------
+  // write FIFO until full and
+  // read until empty
+  // MSF = 0
+  //------------------------------------------------
     for (i = 0; i <40; i = i + 1)
     begin
       write_fifo (i);
@@ -88,14 +111,19 @@ initial
 
     repeat (40)
       begin
-        read_fifo();
+        read_fifo ();
         #20;
       end
 
     #10;
+  //------------------------------------------------
+  // write FIFO until full and
+  // read until empty
+  // MSF = 1
+  //------------------------------------------------
     for (i = 0; i <40; i = i + 1)
     begin
-      write_fifo (i+32);
+      write_fifo (i + 32);
       #20;
     end 
 
@@ -105,6 +133,47 @@ initial
         #20;
       end
     #10;
+
+
+  //------------------------------------------------
+  // read during write
+  // read pointer != write pointer
+  //------------------------------------------------
+
+  //------------------------------------------------
+  // write FIFO until full and
+  // read until empty
+  //------------------------------------------------
+    for (i = 0; i <3; i = i + 1)
+    begin
+      write_fifo (i + 64);
+      #20;
+    end 
+
+    for (i = 0; i <67; i = i + 1)
+    begin
+      read_during_write (i + 64 + 3, 20, 20);
+    end 
+
+
+  //------------------------------------------------
+  // read during write
+  // read pointer = write pointer
+  //------------------------------------------------
+    reset_task ();
+    #30;
+
+  //------------------------------------------------
+  // write FIFO until full and
+  // read until empty
+  //------------------------------------------------
+    for (i = 0; i <70; i = i + 1)
+    begin
+      read_during_write (i+128, 40, 20);
+    end 
+
+    #10;
+
     $finish;
  end
 
