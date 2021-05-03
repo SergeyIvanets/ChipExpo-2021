@@ -3,7 +3,8 @@ module FIFO_simple_DP_RAM
   parameter   FIFO_DEPTH        = 256,
               FIFO_DATA_WIDTH   = 8,
               ALMOST_FULL_DEPTH  = 2,
-              ALMOST_EMPTY_DEPTH = 2
+              ALMOST_EMPTY_DEPTH = 2,
+              LATENCY            = 2  // min value 2
 )
 (
   input                            clk,
@@ -24,11 +25,15 @@ module FIFO_simple_DP_RAM
   localparam FIFO_PTR_WIDTH   = $clog2(FIFO_DEPTH) + 1;
   localparam ALMOST_FULL_VALUE = FIFO_DEPTH - ALMOST_FULL_DEPTH;
   
-  reg [FIFO_PTR_WIDTH-1:0]  rd_ptr;
-  reg [FIFO_PTR_WIDTH-1:0]  wr_ptr;
-  reg [FIFO_PTR_WIDTH-1:0]  operation_count;
+  reg    [FIFO_PTR_WIDTH-1:0]  rd_ptr;
+  reg    [FIFO_PTR_WIDTH-1:0]  wr_ptr;
+  reg    [FIFO_PTR_WIDTH-1:0]  operation_count;
 
-  reg                       write_enable;
+  reg                          write_enable;
+  reg  [FIFO_DATA_WIDTH - 1:0] read_data_int [LATENCY - 2:0];
+  wire   [FIFO_DATA_WIDTH-1:0] read_data_wire;
+
+  integer i;
   
   simple_dual_port_RAM 
   # (.DATA_WIDTH  ( FIFO_DATA_WIDTH                  ),
@@ -41,7 +46,7 @@ module FIFO_simple_DP_RAM
     .read_addr    ( rd_ptr                           ),
     .data_in      ( write_data                       ),
     .write_addr   ( wr_ptr                           ),
-    .data_out     ( read_data                        )
+    .data_out     ( read_data_wire                   )
   );
 
   //------------------------------------------------
@@ -103,5 +108,27 @@ module FIFO_simple_DP_RAM
   assign almost_full  = (operation_count < (FIFO_DEPTH - ALMOST_FULL_DEPTH)) 
                           ? 1'b0 : 1'b1;
   assign almost_empty = (operation_count < ALMOST_EMPTY_DEPTH) ? 1'b1 : 1'b0;
+
+  //------------------------------------------------
+  // Latency for output
+  //
+  // Number of clock cycles = LATENCY
+  // 1 cycle inside simple_dual_port_RAM module
+  // LATENCY-1 cycles in pipeline
+  //------------------------------------------------
+  always @ (posedge clk)
+  begin
+    if (reset)
+      for (i = 0; i < LATENCY - 1; i = i + 1)
+        read_data_int [i] <= {FIFO_DATA_WIDTH{1'b0}};
+    else 
+      begin
+        read_data_int [0] <= read_data_wire;
+        for (i = 1; i < LATENCY - 1; i = i + 1)
+          read_data_int [i] <= read_data_int [i - 1];
+      end
+  end
+
+  assign read_data = read_data_int [LATENCY - 2];
 
 endmodule

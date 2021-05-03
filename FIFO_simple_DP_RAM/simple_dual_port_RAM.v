@@ -21,7 +21,7 @@ module simple_dual_port_RAM
   // Write
     if (write_enable)
       dp_ram [write_addr] <= data_in;
-
+ 
   // Read
       data_out <= dp_ram [read_addr];
   end
