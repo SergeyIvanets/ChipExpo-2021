@@ -14,17 +14,17 @@ vsim -novopt work.testbench
 add wave -radix bin sim:/testbench/clk
 add wave -radix bin sim:/testbench/reset
 add wave -radix bin sim:/testbench/write
-add wave -radix bin sim:/testbench/read
+add wave -radix hex sim:/testbench/i_FIFO_simple_DP_RAM/wr_ptr
 add wave -radix hex sim:/testbench/write_data
+add wave -radix bin sim:/testbench/read
+add wave -radix hex sim:/testbench/i_FIFO_simple_DP_RAM/rd_ptr
+add wave -radix hex sim:/testbench/i_FIFO_simple_DP_RAM/read_data_wire
 add wave -radix hex sim:/testbench/read_data
 add wave -radix bin sim:/testbench/empty
 add wave -radix bin sim:/testbench/full
 add wave -radix bin sim:/testbench/almost_empty
 add wave -radix bin sim:/testbench/almost_full
-add wave -radix hex sim:/testbench/i_FIFO_simple_DP_RAM/wr_ptr
-add wave -radix hex sim:/testbench/i_FIFO_simple_DP_RAM/rd_ptr
 add wave -radix hex sim:/testbench/i_FIFO_simple_DP_RAM/operation_count
-
 # run the simulation
 run -all
 

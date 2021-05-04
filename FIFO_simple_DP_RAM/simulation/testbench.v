@@ -6,7 +6,7 @@ module testbench;
   parameter FIFO_DATA_WIDTH    = 8;
   parameter ALMOST_FULL_DEPTH  = 3;
   parameter ALMOST_EMPTY_DEPTH = 3;
-  parameter LATENCY            = 3;
+  parameter LATENCY            = 1;
 
   reg                        clk;
   reg                        reset;
@@ -99,8 +99,7 @@ initial
   //------------------------------------------------
     reset_task ();
     # (2 * clock_period);
-
-
+    
   //------------------------------------------------
   // write FIFO until full and
   // read until empty
