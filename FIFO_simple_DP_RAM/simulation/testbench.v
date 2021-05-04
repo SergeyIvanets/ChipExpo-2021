@@ -1,4 +1,4 @@
-`timescale 1ns/1ps
+`include "../config.vh"
 
 module testbench;
 
@@ -6,7 +6,10 @@ module testbench;
   parameter FIFO_DATA_WIDTH    = 8;
   parameter ALMOST_FULL_DEPTH  = 3;
   parameter ALMOST_EMPTY_DEPTH = 3;
-  parameter LATENCY            = 1;
+`ifdef PIPELINE
+  parameter LATENCY            = 3;
+`endif
+
 
   reg                        clk;
   reg                        reset;
@@ -29,8 +32,11 @@ FIFO_simple_DP_RAM
 # (.FIFO_DEPTH         ( FIFO_DEPTH                ),
    .FIFO_DATA_WIDTH    ( FIFO_DATA_WIDTH           ),
    .ALMOST_FULL_DEPTH  ( ALMOST_FULL_DEPTH         ),
-   .ALMOST_EMPTY_DEPTH ( ALMOST_EMPTY_DEPTH        ),
-   .LATENCY            ( LATENCY                   )
+   .ALMOST_EMPTY_DEPTH ( ALMOST_EMPTY_DEPTH        )
+`ifdef PIPELINE
+ , .LATENCY            ( LATENCY                   )
+`endif
+
 )
 i_FIFO_simple_DP_RAM
 (
