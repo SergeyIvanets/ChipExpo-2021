@@ -4,8 +4,8 @@ module fifo_generic
 #(
   parameter   FIFO_DEPTH        = 8,
               FIFO_DATA_WIDTH   = 8,
-              ALMOSTFULL_DEPTH  = 2,
-              ALMOSTEMPTY_DEPTH = 2
+              ALMOST_FULL_DEPTH  = 2,
+              ALMOST_EMPTY_DEPTH = 2
 )
 (
   input                            clk,
@@ -24,7 +24,7 @@ module fifo_generic
 );
 
   localparam FIFO_PTR_WIDTH   = $clog2(FIFO_DEPTH) + 1;
-  localparam ALMOSTFULL_VALUE = FIFO_DEPTH - ALMOSTFULL_DEPTH;
+  localparam ALMOST_FULL_VALUE = FIFO_DEPTH - ALMOST_FULL_DEPTH;
   
   reg [FIFO_DATA_WIDTH-1:0] fifo_array [FIFO_DEPTH-1:0];
 
@@ -38,9 +38,9 @@ module fifo_generic
   always @ (posedge clk)
   begin
     if (reset)
-      wr_ptr          <= {FIFO_PTR_WIDTH{1'b0}};
+      wr_ptr <= {FIFO_PTR_WIDTH{1'b0}};
     else if (write & !full)
-      wr_ptr          <= wr_ptr + 1'b1;
+        wr_ptr <= wr_ptr + 1'b1;
   end
 
   //------------------------------------------------
@@ -69,20 +69,27 @@ module fifo_generic
   begin
     if (reset)
       operation_count <= {FIFO_PTR_WIDTH{1'b0}};
-    else if (write & !full)
-        operation_count <= operation_count + 1'b1;
-      else if (read & !empty) 
-        operation_count <= operation_count - 1'b1;
+    else
+      casex ({read, write, full, empty})
+        4'b10x0: operation_count <= operation_count - 1'b1; 
+        4'b010x: operation_count <= operation_count + 1'b1;
+        4'b1101: operation_count <= operation_count + 1'b1;
+        4'b1110: operation_count <= operation_count - 1'b1;
+        4'b1100: operation_count <= operation_count;
+        4'b00xx: operation_count <= operation_count;
+        default: operation_count <= operation_count;
+      endcase  
+
   end
 
   //------------------------------------------------
   // Almost Full and Almost Empty flags
   //------------------------------------------------
   assign almost_full  = 
-         (operation_count < (FIFO_DEPTH - ALMOSTFULL_DEPTH)) 
+    (operation_count < (FIFO_DEPTH - ALMOST_FULL_DEPTH)) 
        ? 1'b0 : 1'b1;
   assign almost_empty = 
-         (operation_count < ALMOSTEMPTY_DEPTH) ? 1'b1 : 1'b0;
+    (operation_count < ALMOST_EMPTY_DEPTH) ? 1'b1 : 1'b0;
 
   //-----------------------------------------------
   // FIFO Write

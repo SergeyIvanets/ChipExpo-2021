@@ -1,14 +1,12 @@
-`include "config.vh"
+//`include "simple_dual_port_RAM.v"
 
 module FIFO_simple_DP_RAM
 #(
-  parameter   FIFO_DEPTH        = 256,
-              FIFO_DATA_WIDTH   = 8,
+  parameter   FIFO_DEPTH         = 256,
+              FIFO_DATA_WIDTH    = 8,
               ALMOST_FULL_DEPTH  = 2,
-              ALMOST_EMPTY_DEPTH = 2
-`ifdef PIPELINE
-            , LATENCY           = 3 // min value 1
-`endif
+              ALMOST_EMPTY_DEPTH = 2,
+              LATENCY            = 3 // min value 2
 )
 (
   input                            clk,
@@ -33,7 +31,13 @@ module FIFO_simple_DP_RAM
   reg    [FIFO_PTR_WIDTH-1:0]  wr_ptr;
   reg    [FIFO_PTR_WIDTH-1:0]  operation_count;
 
-  reg                          write_enable;
+  reg  [FIFO_DATA_WIDTH - 1:0] read_data_int  [LATENCY - 2:0];
+  reg  [FIFO_DATA_WIDTH - 1:0] write_data_int [LATENCY - 1:0];
+  reg  [FIFO_PTR_WIDTH-1:0]    wr_ptr_int     [LATENCY - 1:0];
+
+  reg                          write_int      [LATENCY - 1:0];
+
+  wire                         write_enable;
   wire   [FIFO_DATA_WIDTH-1:0] read_data_wire;
 
   integer i;
@@ -44,11 +48,12 @@ module FIFO_simple_DP_RAM
   )
   fifo_array
   (
-    .write_enable ( write_enable                     ),
     .clk          ( clk                              ),
+    .read_enable  ( read                             ),
     .read_addr    ( rd_ptr                           ),
-    .data_in      ( write_data                       ),
-    .write_addr   ( wr_ptr                           ),
+    .data_in      ( write_data_int [LATENCY - 1]     ),
+    .write_enable ( write_int [LATENCY - 1]          ),
+    .write_addr   ( wr_ptr_int [LATENCY - 2]         ),
     .data_out     ( read_data_wire                   )
   );
 
@@ -60,15 +65,15 @@ module FIFO_simple_DP_RAM
     if (reset)
       begin
         wr_ptr          <= {FIFO_PTR_WIDTH{1'b0}};
-        write_enable    <= 1'b0;
+        write_int [0]   <= 1'b0;
       end
     else if (write & !full)
         begin
           wr_ptr        <= wr_ptr + 1'b1;
-          write_enable  <= 1'b1;      
+          write_int [0] <= 1'b1;      
         end
       else
-        write_enable    <= 1'b0;
+        write_int [0]   <= 1'b0;
     end
 
   //------------------------------------------------
@@ -97,12 +102,17 @@ module FIFO_simple_DP_RAM
   begin
     if (reset)
       operation_count <= {FIFO_PTR_WIDTH{1'b0}};
-    else if (write & read & empty)
-      operation_count <= operation_count;
-      else if (write & !full)
-        operation_count <= operation_count + 1'b1;
-        else if (read & !empty) 
-          operation_count <= operation_count - 1'b1;
+    else
+      casex ({read, write, full, empty})
+        4'b10x0: operation_count <= operation_count - 1'b1; 
+        4'b010x: operation_count <= operation_count + 1'b1;
+        4'b1101: operation_count <= operation_count + 1'b1;
+        4'b1110: operation_count <= operation_count - 1'b1;
+        4'b1100: operation_count <= operation_count;
+        4'b00xx: operation_count <= operation_count;
+        default: operation_count <= operation_count;
+      endcase  
+
   end
 
   //------------------------------------------------
@@ -113,35 +123,35 @@ module FIFO_simple_DP_RAM
   assign almost_empty = (operation_count < ALMOST_EMPTY_DEPTH) ? 1'b1 : 1'b0;
 
   //------------------------------------------------
-  // Latency for output
-  // If NOPIPELINE -- No Latency
-  // If PIPELINE   -- Add Latency
-  //------------------------------------------------
-
-  `ifdef PIPELINE
-  //------------------------------------------------
   // Number of clock cycles = LATENCY
   //------------------------------------------------
-    reg  [FIFO_DATA_WIDTH - 1:0] read_data_int [LATENCY - 1:0];
 
     always @ (posedge clk)
     begin
-      if (reset)
-        for (i = 0; i < LATENCY; i = i + 1)
-          read_data_int [i] <= {FIFO_DATA_WIDTH{1'b0}};
-      else 
-        begin
-          read_data_int [0] <= read_data_wire;
-          for (i = 1; i < LATENCY; i = i + 1)
-            read_data_int [i] <= read_data_int [i - 1];
-        end
+      read_data_int [0] <= read_data_wire;
+      for (i = 1; i < LATENCY - 1; i = i + 1)
+        read_data_int [i] <= read_data_int [i - 1];
     end
-    assign read_data = read_data_int [LATENCY - 1];
-  //------------------------------------------------
-  // No Latency
-  //------------------------------------------------
-  `elsif NOPIPELINE
-    assign read_data = read_data_wire; 
-  `endif
-  
+
+    always @ (posedge clk)
+    begin
+      write_data_int [0] <= write_data;
+      for (i = 1; i < LATENCY; i = i + 1)
+		begin
+        write_int [i]      <= write_int [i - 1];
+        write_data_int [i] <= write_data_int [i - 1];
+      end
+    end
+
+    always @ (posedge clk)
+    begin
+      wr_ptr_int [0] <= wr_ptr;
+      for (i = 1; i < LATENCY; i = i + 1)
+		begin
+        wr_ptr_int [i]     <= wr_ptr_int [i - 1];
+      end
+    end
+
+  assign read_data    = read_data_int [LATENCY - 2];
+
 endmodule

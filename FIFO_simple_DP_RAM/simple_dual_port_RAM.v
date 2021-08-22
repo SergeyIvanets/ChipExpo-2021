@@ -4,14 +4,15 @@ module simple_dual_port_RAM
             ADDR_WIDTH = 4
 )
 (
-  input                          write_enable, 
-  input                          clk,
+  input                           clk,
   // Read port:
-  input      [(ADDR_WIDTH-1):0]  read_addr, 
-  input      [(DATA_WIDTH-1):0]  data_in,
+  input                           read_enable, 
+  input       [(ADDR_WIDTH-1):0]  read_addr, 
+  input       [(DATA_WIDTH-1):0]  data_in,
   // Write port:
-  input      [(ADDR_WIDTH-1):0]  write_addr,
-  output     [(DATA_WIDTH-1):0]  data_out
+  input                           write_enable, 
+  input       [(ADDR_WIDTH-1):0]  write_addr,
+  output reg  [(DATA_WIDTH-1):0]  data_out
 );
   // Declare the array variable
   reg [DATA_WIDTH-1:0] dp_ram [0:2**ADDR_WIDTH-1];
@@ -25,6 +26,10 @@ module simple_dual_port_RAM
   
   
   // Read
-  assign data_out = dp_ram [read_addr];
+  always @ (posedge clk)
+  begin
+  //  if (read_enable)
+      data_out = dp_ram [read_addr];
+  end
 
 endmodule
